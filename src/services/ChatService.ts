@@ -34,7 +34,7 @@ export class ChatService {
   async removeExcessTokens (): Promise<void> {
     this.totalTokens = await this.getTotalTokens()
     console.log(this.totalTokens)
-    if (this.totalTokens > 000) {
+    if (this.totalTokens > 1000) {
       let result: number = 0
       console.log(`token count > 14000`)
       while (this.messages.length > 0 && result >= 8000) {
