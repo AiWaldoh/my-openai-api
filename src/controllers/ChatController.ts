@@ -16,14 +16,29 @@ export class ChatController {
     try {
       const message = req.body.message
       const model = req.body.model
+      const modelType = req.body.modelType
+
       if (model) {
         console.log(`model name ${model}`)
         this.chatService.modelName = model
       }
-      this.chatService.addMessage(message)
-      const response = await this.chatService.sendMessage()
-      console.log(response)
-      res.json(response)
+      //modelType is api or web
+      if (modelType === 'web') {
+        console.log(`model type is web`)
+        const response = await this.chatService.webAPIsendMessage(
+          message,
+          model,
+          '',
+          ''
+        )
+        console.log(`yay!`)
+        console.log(response)
+        res.json(response)
+      } else {
+        this.chatService.addMessage(message)
+        const response = await this.chatService.sendMessage()
+        res.json(response)
+      }
     } catch (err) {
       console.error(err)
       res.status(500).json({ error: 'An error occurred' })

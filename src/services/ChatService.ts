@@ -1,4 +1,5 @@
 import { ChatOpenAI } from 'langchain/chat_models/openai'
+import { HttpClient } from '../http/HttpClient'
 import {
   HumanChatMessage,
   SystemChatMessage,
@@ -31,24 +32,40 @@ export class ChatService {
   async getTotalTokens (): Promise<number> {
     return (await this.chat.getNumTokensFromMessages(this.messages)).totalCount
   }
-  async removeExcessTokens (): Promise<void> {
-    this.totalTokens = await this.getTotalTokens()
-    if (this.totalTokens > 14000) {
-      let result: number = 0
-      console.log(`token count > 14000`)
-      while (this.messages.length > 0 && result >= 8000) {
-        this.messages.pop()
-        result = await this.getTotalTokens()
-      }
-    }
-  }
 
   async sendMessage (): Promise<AIChatMessage> {
     const response = await this.chat.call(this.messages)
     this.messages.push(response)
-    //dont await who cares
-    this.removeExcessTokens()
+    //this.totalTokens = await this.getTotalTokens()
+    //this.removeExcessTokens()
     return response
+  }
+  async webAPIsendMessage (
+    message: string,
+    model: string,
+    conversation_id: string,
+    parent_message_id: string
+  ): Promise<String> {
+    const client = new HttpClient(
+      ('http://' + process.env.PROXY_IP) as string,
+      process.env.BEARER_TOKEN as string
+    )
+
+    console.log(`sending post to message ${message} and ${model}`)
+
+    try {
+      const response = await client.post('/chat', {
+        message: message,
+        conversation_id: '',
+        parent_message_id: '',
+        model: model
+      })
+      console.log(response.data)
+      return response.data
+    } catch (error) {
+      console.error(error)
+      return 'error'
+    }
   }
   get modelName () {
     return this.chat.modelName
@@ -59,5 +76,17 @@ export class ChatService {
 
   resetMessages (): void {
     this.messages = [this.systemMessage]
+  }
+
+  async removeExcessTokens (): Promise<void> {
+    this.totalTokens = await this.getTotalTokens()
+    if (this.totalTokens > 14000) {
+      let result: number = 0
+      console.log(`token count > 14000`)
+      while (this.messages.length > 0 && result >= 8000) {
+        this.messages.pop()
+        result = await this.getTotalTokens()
+      }
+    }
   }
 }
