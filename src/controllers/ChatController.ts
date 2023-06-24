@@ -15,32 +15,32 @@ export class ChatController {
   async handleMessage(req: Request, res: Response) {
     try {
       const message = req.body.message
-      const model = req.body.model
       const modelType = req.body.modelType
 
-      if (model) {
-        console.log(`model name ${model}`)
-        this.chatService.modelName = model
-      }
-      //modelType is api or web
+      //set model for request
+      this.chatService.modelName = req.body.model || 'gpt-3.5-turbo'
+
       if (modelType === 'web') {
-        console.log(`model type is web`)
-        const response = await this.chatService.reverseAPISendMessage(
-          message,
-          model,
-          '',
-          ''
-        )
-        console.log(`received response from reverse API`)
-        res.json(response)
-        return
+        return await this.handleWebAPI(message, res)
+      } else {
+        return await this.handleOpenAIAPI(message, res)
       }
-      this.chatService.addMessage(message)
-      const response = await this.chatService.sendMessage()
-      res.json(response)
     } catch (err) {
       console.error(err)
       res.status(500).json({ error: 'An error occurred' })
     }
+  }
+
+  private async handleOpenAIAPI(message: any, res: Response<any, Record<string, any>>) {
+    this.chatService.addMessage(message)
+    const response = await this.chatService.sendMessage()
+    res.json(response)
+
+  }
+
+  private async handleWebAPI(message: any, res: Response<any, Record<string, any>>) {
+    const response = await this.chatService.reverseAPISendMessage(message, '', '')
+    res.json(response)
+
   }
 }
